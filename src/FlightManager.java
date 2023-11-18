@@ -3,10 +3,10 @@ import java.util.Scanner;
 
 public class FlightManager {
 
-    // private static void clearScreen() {
-    //     System.out.print("\033[H\033[2J");
-    //     System.out.flush();
-    // }
+    private static void clearScreen() {
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
+    }
 
     private static void printMenu(){
         System.out.println("Bienvenido al Sistema de reservas de vuelos");
@@ -28,7 +28,7 @@ public class FlightManager {
     }
 
     public void menu(){
-        // clearScreen();
+        clearScreen();
         Scanner input = new Scanner(System.in);
         while (true){
             printMenu();

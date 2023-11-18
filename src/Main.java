@@ -6,7 +6,7 @@ public class Main {
         Database database = new Database();
         File file = new File(filePath);
         if(!file.exists()){
-            database.createDatabase("database.db");
+            // database.createDatabase("database.db");
             database.connect();
             database.createDatabase();
         } else {
