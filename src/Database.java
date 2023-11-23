@@ -12,21 +12,6 @@ public class Database {
 
     private Connection connection;
 
-    // public void createDatabase(String fileName) {
-    // String url = "jdbc:sqlite:C:\\INF331-Tarea3\\src\\" + fileName;
-
-    // try (Connection conn = DriverManager.getConnection(url)) {
-    // if (conn != null) {
-    // DatabaseMetaData meta = conn.getMetaData();
-    // System.out.println("The driver name is " + meta.getDriverName());
-    // System.out.println("A new database has been created.");
-    // }
-
-    // } catch (SQLException e) {
-    // throw new RuntimeException(e);
-    // }
-    // }
-
     public void connect() {
         String url = "jdbc:sqlite:C:\\INF331-Tarea3\\src\\database.db";
         try {
@@ -89,7 +74,7 @@ public class Database {
             preparedStatement.setString(2, destination);
             preparedStatement.setString(3, departure);
             preparedStatement.setString(4, duration);
-            java.sql.ResultSet resultSet = preparedStatement.executeQuery();
+            ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 System.out.println("El vuelo ya existe");
                 return -1;
@@ -129,6 +114,22 @@ public class Database {
     }
 
     public ResultSet showFlight(String origin, String destination, String departure) {
+        try {
+            String sql = "SELECT * FROM flights WHERE origin = ? AND destination = ? AND departure = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, origin);
+            preparedStatement.setString(2, destination);
+            preparedStatement.setString(3, departure);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                System.out.println("El vuelo no existe");
+                return null;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al verificar si el vuelo existe");
+            throw new RuntimeException(e);
+        }
+
         try {
             String sql = "SELECT * FROM flights WHERE origin = ? AND destination = ? AND departure = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -233,19 +234,18 @@ public class Database {
         return 1;
     }
 
-    public int reserveFlight(String origin, String destination, String departure, String duration, int seats) {
+    public int reserveFlight(String origin, String destination, String departure, int seats, String name) {
+        int flightId;
         try {
-            String sql = "SELECT * FROM flights WHERE origin = ? AND destination = ? AND departure = ? AND duration = ?";
+            String sql = "SELECT * FROM flights WHERE origin = ? AND destination = ? AND departure = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, origin);
             preparedStatement.setString(2, destination);
             preparedStatement.setString(3, departure);
-            preparedStatement.setString(4, duration);
             ResultSet resultSet = preparedStatement.executeQuery();
-            // TODO: en la tabla de reservas agregar la reserva. Si no hay asientos
-            // disponibles, no agregar la reserva
             if (resultSet.next()) {
                 int seatsAvailable = resultSet.getInt("seats");
+                flightId = resultSet.getInt("id");
                 if (seatsAvailable < seats) {
                     System.out.println("No hay suficientes asientos disponibles");
                     return -2;
@@ -260,14 +260,14 @@ public class Database {
         }
 
         try {
-            String sql = "UPDATE flights SET seats = seats - ? WHERE origin = ? AND destination = ? AND departure = ? AND duration = ?";
+            String sql = "UPDATE flights SET seats = seats - ? WHERE origin = ? AND destination = ? AND departure = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setInt(1, seats);
             preparedStatement.setString(2, origin);
             preparedStatement.setString(3, destination);
             preparedStatement.setString(4, departure);
-            preparedStatement.setString(5, duration);
             preparedStatement.executeUpdate();
+            insertReservation(name, seats, flightId);
             System.out.println("Reserva realizada correctamente");
         } catch (SQLException e) {
             System.out.println("Error al realizar la reserva");
@@ -276,6 +276,111 @@ public class Database {
         return 1;
     }
 
-    // TODO: agregar metodos CRUD para la tabla de reservas
+
+
+    public int insertReservation(String name, int seats, int flightId) {
+        try {
+            String sql = "INSERT INTO reservations(Name, seats, flight_id) VALUES(?,?,?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, seats);
+            preparedStatement.setInt(3, flightId);
+            preparedStatement.executeUpdate();
+            System.out.println("Reserva insertada correctamente");
+        } catch (SQLException e) {
+            System.out.println("Error al insertar la reserva");
+            throw new RuntimeException(e);
+        }
+        return 1;
+    }
+
+    public ResultSet showReservations() {
+        try {
+            String sql = "SELECT * FROM reservations";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSet;
+        } catch (SQLException e) {
+            System.out.println("Error al mostrar las reservas");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ResultSet showReservation(String name, int flightId) {
+        try {
+            String sql = "SELECT * FROM flights WHERE id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, flightId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                System.out.println("El vuelo no existe");
+                return null;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al verificar si el vuelo existe");
+            throw new RuntimeException(e);
+        }
+
+        try {
+            String sql = "SELECT * FROM reservations WHERE Name = ? AND flight_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, flightId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSet;
+        } catch (SQLException e) {
+            System.out.println("Error al mostrar la reserva");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int deleteReservation(String name, int flightId) {
+        try {
+            String sql = "SELECT * FROM reservations WHERE Name = ? AND flight_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, flightId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                System.out.println("La reserva no existe");
+                return -1;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al verificar si la reserva existe");
+            throw new RuntimeException(e);
+        }
+
+        try {
+            String sql = "DELETE FROM reservations WHERE Name = ? AND flight_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, flightId);
+            preparedStatement.executeUpdate();
+            System.out.println("Reserva eliminada correctamente");
+        } catch (SQLException e) {
+            System.out.println("Error al eliminar la reserva");
+            throw new RuntimeException(e);
+        }
+        return 1;
+    }
+
+    public int deleteAllReservations() {
+        try {
+            String sql = "DELETE FROM reservations";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.executeUpdate();
+            System.out.println("Reservas eliminadas correctamente");
+        } catch (SQLException e) {
+            System.out.println("Error al eliminar las reservas");
+            throw new RuntimeException(e);
+        }
+        return 1;
+    }
+
+    public int deleteAll() {
+        deleteAllReservations();
+        deleteAllFlights();
+        return 1;
+    }
 
 }

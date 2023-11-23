@@ -1,8 +1,8 @@
 package test;
 
 import org.junit.FixMethodOrder;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.runners.MethodSorters;
@@ -19,8 +19,8 @@ public class DatabaseTest {
     private static String filePath = "src\\database.db";
     private static File file = new File(filePath);
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         database = new Database();
         if(file.exists()){
             file.delete();
@@ -29,8 +29,8 @@ public class DatabaseTest {
         database.createDatabase();
     }
 
-    @AfterAll
-    public static void tearDown() {
+    @AfterEach
+    public void tearDown() {
         database.closeConnection();
     }
 
@@ -45,6 +45,7 @@ public class DatabaseTest {
     @Test
     public void testB_BShowFlight(){
         System.out.println("Test showFlight");
+        database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
         ResultSet a = database.showFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00");
         try{
             while(a.next()){
@@ -63,8 +64,8 @@ public class DatabaseTest {
     public void testC_CUpdateFlight() {
         System.out.println("Test updateFlight");
         // Verificar que se modifica un vuelo correctamente
-        // int a = database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
-        int a = database.updateFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "6h", 150);
+        int a = database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
+        a = database.updateFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "6h", 150);
         assertEquals(1, a);
     }
 
@@ -72,6 +73,7 @@ public class DatabaseTest {
     public void testD_DDeleteFlight() {
         System.out.println("Test deleteFlight");
         // Verificar que se elimina un vuelo correctamente
+        database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
         int a = database.deleteFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00");
         assertEquals(1, a);
     }
@@ -79,7 +81,6 @@ public class DatabaseTest {
     @Test
     public void testE_EUpdateFlightMinusOne() {
         System.out.println("Test updateFlight not found -1");
-        // Verificar que se modifica un vuelo correctamente
         // int a = database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
         int a = database.updateFlight("Aeropuerto3", "Aeropuerto2", "2020-01-01-10:00", "6h", 150);
         assertEquals(-1, a);
@@ -88,11 +89,48 @@ public class DatabaseTest {
     @Test
     public void testF_FUpdateFlightMinusThree() {
         System.out.println("Test updateFlight more than one -3");
-        // Verificar que se modifica un vuelo correctamente
         int a = database.insertFlight("Aeropuerto3", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
         a = database.insertFlight("Aeropuerto3", "Aeropuerto2", "2020-01-01-10:00", "7h", 130);
         a = database.updateFlight("Aeropuerto3", "Aeropuerto2", "2020-01-01-10:00", "5h", 150);
         assertEquals(-3, a);
+    }
+
+    @Test
+    public void testG_GDeleteFlightMinusOne() {
+        System.out.println("Test deleteFlight not found -1");
+        int a = database.deleteFlight("Aeropuerto3", "Aeropuerto2", "2020-01-01-10:00");
+        assertEquals(-1, a);
+    }
+
+    @Test
+    public void testH_HReserveFlight(){
+        System.out.println("Test reserveFlight");
+        database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
+        int a = database.reserveFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", 3, "Juan");
+        assertEquals(1, a);
+    }
+
+    @Test
+    public void testI_IReserveFlightMinusOne(){
+        System.out.println("Test reserveFlight not found -1");
+        int a = database.reserveFlight("Aeropuerto43", "Aeropuerto2", "2020-01-01-10:00", 3, "Pepe");
+        assertEquals(-1, a);
+    }
+
+    @Test
+    public void test_J_ReserveFlightMinusTwo(){
+        System.out.println("Test reserveFlight not enough seats -2");
+        database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
+        int a = database.reserveFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", 101, "Pedro");
+        assertEquals(-2, a);
+    }
+
+    @Test
+    public void test_K_InsertFlightMinusTwo(){
+        System.out.println("Test insertFlight flight already exists -1");
+        int a = database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 101);
+        a = database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 101);
+        assertEquals(-1, a);
     }
 
 
