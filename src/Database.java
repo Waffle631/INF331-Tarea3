@@ -101,7 +101,7 @@ public class Database {
         return 1;
     }
 
-    public ResultSet showFlights() {
+    public ResultSet showAllFlights() {
         try {
             String sql = "SELECT * FROM flights";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
