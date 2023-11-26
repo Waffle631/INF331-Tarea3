@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.runners.MethodSorters;
 
 import java.io.File;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 
 import src.Database;
@@ -18,6 +20,24 @@ public class DatabaseTest {
     private static Database database;
     private static String filePath = "src\\database.db";
     private static File file = new File(filePath);
+
+    public static int generateNumericHash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hashBytes = md.digest(input.getBytes());
+
+            // Convertir el hash en una representación numérica
+            int numericHash = 0;
+            for (int i = 0; i < 8; i++) {
+                numericHash |= (hashBytes[i] & 0xFFL) << (8 * i);
+            }
+
+            return numericHash;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
 
     @BeforeEach
     public void setUp() {
@@ -106,14 +126,16 @@ public class DatabaseTest {
     public void testH_HReserveFlight(){
         System.out.println("Test reserveFlight");
         database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
-        int a = database.reserveFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", 3, "Juan");
+        String input = "Juan" + String.valueOf(3);
+        int conformation_number = generateNumericHash(input);
+        int a = database.reserveFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", 3, "Juan", conformation_number);
         assertEquals(1, a);
     }
 
     @Test
     public void testI_IReserveFlightMinusOne(){
         System.out.println("Test reserveFlight not found -1");
-        int a = database.reserveFlight("Aeropuerto43", "Aeropuerto2", "2020-01-01-10:00", 3, "Pepe");
+        int a = database.reserveFlight("Aeropuerto43", "Aeropuerto2", "2020-01-01-10:00", 3, "Pepe", 123456789);
         assertEquals(-1, a);
     }
 
@@ -121,7 +143,9 @@ public class DatabaseTest {
     public void test_J_ReserveFlightMinusTwo(){
         System.out.println("Test reserveFlight not enough seats -2");
         database.insertFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", "5h", 100);
-        int a = database.reserveFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", 101, "Pedro");
+        String input = "Pedro" + String.valueOf(101);
+        int conformation_number = generateNumericHash(input);
+        int a = database.reserveFlight("Aeropuerto1", "Aeropuerto2", "2020-01-01-10:00", 101, "Pedro", conformation_number);
         assertEquals(-2, a);
     }
 
